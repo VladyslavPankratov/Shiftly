@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import api from '../services/api';
-import { Shift } from '../types';
+import type { Shift } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';

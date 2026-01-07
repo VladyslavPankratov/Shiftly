@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ScheduleView } from '../types';
+import type { ScheduleView } from '../types';
 
 interface ScheduleState {
   currentView: ScheduleView;

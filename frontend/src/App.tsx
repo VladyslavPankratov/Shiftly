@@ -6,39 +6,94 @@ import RegisterPage from './pages/RegisterPage';
 import SchedulePage from './pages/SchedulePage';
 import EmployeesPage from './pages/EmployeesPage';
 import { Navbar } from './components/layout/Navbar';
+import { 
+  ErrorBoundary, 
+  PageErrorBoundary, 
+  SectionErrorBoundary 
+} from './components/errors';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
+// Wrapped page components with section error boundaries
+function SchedulePageWithBoundary() {
+  return (
+    <SectionErrorBoundary title="Помилка завантаження розкладу">
+      <SchedulePage />
+    </SectionErrorBoundary>
+  );
+}
+
+function EmployeesPageWithBoundary() {
+  return (
+    <SectionErrorBoundary title="Помилка завантаження працівників">
+      <EmployeesPage />
+    </SectionErrorBoundary>
+  );
+}
+
+function AuthenticatedApp() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ErrorBoundary variant="component" title="Помилка навігації">
+        <Navbar />
+      </ErrorBoundary>
+      <main>
+        <Routes>
+          <Route path="/" element={<Navigate to="/schedule" />} />
+          <Route path="/schedule" element={<SchedulePageWithBoundary />} />
+          <Route path="/employees" element={<EmployeesPageWithBoundary />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/*"
-            element={
-              <PrivateRoute>
-                <div className="min-h-screen bg-gray-50">
-                  <Navbar />
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/schedule" />} />
-                    <Route path="/schedule" element={<SchedulePage />} />
-                    <Route path="/employees" element={<EmployeesPage />} />
-                  </Routes>
-                </div>
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <PageErrorBoundary title="Критична помилка додатку">
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route 
+              path="/login" 
+              element={
+                <SectionErrorBoundary title="Помилка сторінки входу">
+                  <LoginPage />
+                </SectionErrorBoundary>
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                <SectionErrorBoundary title="Помилка сторінки реєстрації">
+                  <RegisterPage />
+                </SectionErrorBoundary>
+              } 
+            />
+            <Route
+              path="/*"
+              element={
+                <PrivateRoute>
+                  <AuthenticatedApp />
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </PageErrorBoundary>
   );
 }
 
