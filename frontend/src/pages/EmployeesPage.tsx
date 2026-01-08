@@ -8,7 +8,9 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 
 export default function EmployeesPage() {
   const queryClient = useQueryClient();
+  // TODO: implement employee form modal
   const [showForm, setShowForm] = useState(false);
+  void showForm; // Used by setShowForm handlers, form UI pending implementation
 
   const { data: employees, isLoading } = useQuery<Employee[]>({
     queryKey: ['employees'],
