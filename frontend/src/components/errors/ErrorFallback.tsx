@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { env } from '../../config/env';
 
 interface ErrorFallbackProps {
   error: Error;
@@ -21,12 +22,11 @@ export function ErrorFallback({
   };
 
   const handleReportBug = () => {
-    const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || 'support@shiftly.app';
     const subject = encodeURIComponent(`Bug Report: ${error.name}`);
     const body = encodeURIComponent(
       `Error: ${error.message}\n\nStack trace:\n${error.stack}\n\nURL: ${window.location.href}\nTimestamp: ${new Date().toISOString()}`
     );
-    window.open(`mailto:${supportEmail}?subject=${subject}&body=${body}`);
+    window.open(`mailto:${env.VITE_SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
   };
 
   if (variant === 'component') {
