@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { validateDepartmentTenant } from '../utils/tenant';
 
 export const getEmployees = async (req: AuthRequest, res: Response) => {
   try {
@@ -54,6 +55,14 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
   try {
     const { name, email, phone, position, departmentId, color, weeklyHoursLimit, availability } = req.body;
 
+    // Validate that department belongs to the same organization
+    if (departmentId) {
+      const validation = await validateDepartmentTenant(departmentId, req.user!.organizationId);
+      if (!validation.valid) {
+        return res.status(403).json({ message: validation.error });
+      }
+    }
+
     const employee = await prisma.employee.create({
       data: {
         name,
@@ -93,6 +102,14 @@ export const updateEmployee = async (req: AuthRequest, res: Response) => {
 
     if (!existingEmployee) {
       return res.status(404).json({ message: 'Працівника не знайдено' });
+    }
+
+    // Validate that department belongs to the same organization
+    if (departmentId) {
+      const validation = await validateDepartmentTenant(departmentId, req.user!.organizationId);
+      if (!validation.valid) {
+        return res.status(403).json({ message: validation.error });
+      }
     }
 
     // Update availability if provided

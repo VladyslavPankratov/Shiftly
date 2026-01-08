@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { validateTenantResources } from '../utils/tenant';
 
 export const getShifts = async (req: AuthRequest, res: Response) => {
   try {
@@ -45,6 +46,16 @@ export const createShift = async (req: AuthRequest, res: Response) => {
   try {
     const { employeeId, startTime, endTime, position, departmentId, notes, status } = req.body;
 
+    // Validate that employee and department belong to the same organization
+    const validation = await validateTenantResources(req.user!.organizationId, {
+      employeeId,
+      departmentId,
+    });
+
+    if (!validation.valid) {
+      return res.status(403).json({ message: validation.error });
+    }
+
     const shift = await prisma.shift.create({
       data: {
         employeeId,
@@ -80,6 +91,16 @@ export const updateShift = async (req: AuthRequest, res: Response) => {
 
     if (!existingShift) {
       return res.status(404).json({ message: 'Зміну не знайдено' });
+    }
+
+    // Validate that employee and department belong to the same organization
+    const validation = await validateTenantResources(req.user!.organizationId, {
+      employeeId,
+      departmentId,
+    });
+
+    if (!validation.valid) {
+      return res.status(403).json({ message: validation.error });
     }
 
     const shift = await prisma.shift.update({
