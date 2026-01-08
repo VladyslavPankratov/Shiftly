@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { env } from '../config/env';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -44,8 +45,8 @@ export const register = async (req: Request, res: Response) => {
         organizationId: user.organizationId,
         role: user.role,
       },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     res.status(201).json({
@@ -87,8 +88,8 @@ export const login = async (req: Request, res: Response) => {
         organizationId: user.organizationId,
         role: user.role,
       },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     res.json({

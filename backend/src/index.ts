@@ -1,18 +1,25 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Load environment variables BEFORE importing anything that uses them
+dotenv.config();
+
+import { env } from './config/env';
 import authRoutes from './routes/auth.routes';
 import employeeRoutes from './routes/employee.routes';
 import shiftRoutes from './routes/shift.routes';
 import departmentRoutes from './routes/department.routes';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Routes
@@ -34,6 +41,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+app.listen(env.PORT, () => {
+  console.log(`🚀 Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`);
 });

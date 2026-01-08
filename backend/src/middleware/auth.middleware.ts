@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -21,7 +22,7 @@ export const authMiddleware = async (
       return res.status(401).json({ message: 'Токен не надано' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
       id: string;
       organizationId: string;
       role: string;

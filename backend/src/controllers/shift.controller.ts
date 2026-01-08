@@ -154,12 +154,12 @@ export const autoScheduleShifts = async (req: AuthRequest, res: Response) => {
       const dayOfWeek = date.getDay();
 
       // Find templates for this day
-      const dayTemplates = templates.filter(t => t.dayOfWeek === dayOfWeek);
+      const dayTemplates = templates.filter((t: { dayOfWeek: number }) => t.dayOfWeek === dayOfWeek);
 
       for (const template of dayTemplates) {
         // Find available employees for this template
-        const availableEmployees = employees.filter(emp => {
-          const availability = emp.availability.find(a => a.dayOfWeek === dayOfWeek);
+        const availableEmployees = employees.filter((emp: { availability: { dayOfWeek: number }[] }) => {
+          const availability = emp.availability.find((a: { dayOfWeek: number }) => a.dayOfWeek === dayOfWeek);
           return availability !== undefined;
         });
 
