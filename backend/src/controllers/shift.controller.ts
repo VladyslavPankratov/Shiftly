@@ -2,6 +2,11 @@ import { Response } from 'express';
 import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { validateTenantResources } from '../utils/tenant';
+import {
+  checkShiftConflicts,
+  suggestAlternativeTimes,
+  ConflictSeverity,
+} from '../services/conflict.service';
 
 export const getShifts = async (req: AuthRequest, res: Response) => {
   try {
@@ -44,7 +49,7 @@ export const getShifts = async (req: AuthRequest, res: Response) => {
 
 export const createShift = async (req: AuthRequest, res: Response) => {
   try {
-    const { employeeId, startTime, endTime, position, departmentId, notes, status } = req.body;
+    const { employeeId, startTime, endTime, position, departmentId, notes, status, overrideConflicts } = req.body;
 
     // Validate that employee and department belong to the same organization
     const validation = await validateTenantResources(req.user!.organizationId, {
@@ -56,11 +61,54 @@ export const createShift = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: validation.error });
     }
 
+    const shiftStartTime = new Date(startTime);
+    const shiftEndTime = new Date(endTime);
+
+    // Check for conflicts
+    const conflictResult = await checkShiftConflicts(
+      { employeeId, startTime: shiftStartTime, endTime: shiftEndTime },
+      req.user!.organizationId
+    );
+
+    if (conflictResult.hasConflicts) {
+      const hasErrors = conflictResult.conflicts.some(
+        (c) => c.severity === ConflictSeverity.ERROR
+      );
+
+      // Block if there are errors (overlapping shifts) that can't be overridden
+      if (hasErrors) {
+        const suggestions = await suggestAlternativeTimes(
+          { employeeId, startTime: shiftStartTime, endTime: shiftEndTime },
+          req.user!.organizationId
+        );
+
+        return res.status(409).json({
+          message: 'Виявлено конфлікти при створенні зміни',
+          ...conflictResult,
+          suggestions,
+        });
+      }
+
+      // Block warnings unless explicitly overridden
+      if (!overrideConflicts) {
+        const suggestions = await suggestAlternativeTimes(
+          { employeeId, startTime: shiftStartTime, endTime: shiftEndTime },
+          req.user!.organizationId
+        );
+
+        return res.status(409).json({
+          message: 'Виявлено попередження при створенні зміни',
+          ...conflictResult,
+          suggestions,
+        });
+      }
+    }
+
     const shift = await prisma.shift.create({
       data: {
         employeeId,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        startTime: shiftStartTime,
+        endTime: shiftEndTime,
         position,
         departmentId,
         notes,
@@ -83,7 +131,7 @@ export const createShift = async (req: AuthRequest, res: Response) => {
 export const updateShift = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { employeeId, startTime, endTime, position, departmentId, notes, status } = req.body;
+    const { employeeId, startTime, endTime, position, departmentId, notes, status, overrideConflicts } = req.body;
 
     const existingShift = await prisma.shift.findFirst({
       where: { id, organizationId: req.user!.organizationId },
@@ -101,6 +149,50 @@ export const updateShift = async (req: AuthRequest, res: Response) => {
 
     if (!validation.valid) {
       return res.status(403).json({ message: validation.error });
+    }
+
+    const shiftStartTime = startTime ? new Date(startTime) : existingShift.startTime;
+    const shiftEndTime = endTime ? new Date(endTime) : existingShift.endTime;
+    const shiftEmployeeId = employeeId || existingShift.employeeId;
+
+    // Check for conflicts (exclude current shift from overlap check)
+    const conflictResult = await checkShiftConflicts(
+      { employeeId: shiftEmployeeId, startTime: shiftStartTime, endTime: shiftEndTime, shiftId: id },
+      req.user!.organizationId
+    );
+
+    if (conflictResult.hasConflicts) {
+      const hasErrors = conflictResult.conflicts.some(
+        (c) => c.severity === ConflictSeverity.ERROR
+      );
+
+      // Block if there are errors (overlapping shifts) that can't be overridden
+      if (hasErrors) {
+        const suggestions = await suggestAlternativeTimes(
+          { employeeId: shiftEmployeeId, startTime: shiftStartTime, endTime: shiftEndTime, shiftId: id },
+          req.user!.organizationId
+        );
+
+        return res.status(409).json({
+          message: 'Виявлено конфлікти при оновленні зміни',
+          ...conflictResult,
+          suggestions,
+        });
+      }
+
+      // Block warnings unless explicitly overridden
+      if (!overrideConflicts) {
+        const suggestions = await suggestAlternativeTimes(
+          { employeeId: shiftEmployeeId, startTime: shiftStartTime, endTime: shiftEndTime, shiftId: id },
+          req.user!.organizationId
+        );
+
+        return res.status(409).json({
+          message: 'Виявлено попередження при оновленні зміни',
+          ...conflictResult,
+          suggestions,
+        });
+      }
     }
 
     const shift = await prisma.shift.update({
@@ -145,6 +237,49 @@ export const deleteShift = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Delete shift error:', error);
     res.status(500).json({ message: 'Помилка видалення зміни' });
+  }
+};
+
+export const checkConflicts = async (req: AuthRequest, res: Response) => {
+  try {
+    const { employeeId, startTime, endTime, shiftId } = req.body;
+
+    if (!employeeId || !startTime || !endTime) {
+      return res.status(400).json({ message: 'employeeId, startTime та endTime обов\'язкові' });
+    }
+
+    // Validate employee belongs to organization
+    const validation = await validateTenantResources(req.user!.organizationId, {
+      employeeId,
+    });
+
+    if (!validation.valid) {
+      return res.status(403).json({ message: validation.error });
+    }
+
+    const shiftStartTime = new Date(startTime);
+    const shiftEndTime = new Date(endTime);
+
+    const conflictResult = await checkShiftConflicts(
+      { employeeId, startTime: shiftStartTime, endTime: shiftEndTime, shiftId },
+      req.user!.organizationId
+    );
+
+    let suggestions;
+    if (conflictResult.hasConflicts) {
+      suggestions = await suggestAlternativeTimes(
+        { employeeId, startTime: shiftStartTime, endTime: shiftEndTime, shiftId },
+        req.user!.organizationId
+      );
+    }
+
+    res.json({
+      ...conflictResult,
+      suggestions,
+    });
+  } catch (error) {
+    console.error('Check conflicts error:', error);
+    res.status(500).json({ message: 'Помилка перевірки конфліктів' });
   }
 };
 

@@ -5,6 +5,7 @@ import {
   updateShift,
   deleteShift,
   autoScheduleShifts,
+  checkConflicts,
 } from '../controllers/shift.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
@@ -17,5 +18,6 @@ router.post('/', createShift);
 router.put('/:id', updateShift);
 router.delete('/:id', deleteShift);
 router.post('/auto-schedule', autoScheduleShifts);
+router.post('/check-conflicts', checkConflicts);
 
 export default router;
