@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SchedulePage from './pages/SchedulePage';
 import EmployeesPage from './pages/EmployeesPage';
+import ShiftTemplatesPage from './pages/ShiftTemplatesPage';
 import { Navbar } from './components/layout/Navbar';
 import { 
   ErrorBoundary, 
@@ -43,6 +44,14 @@ function EmployeesPageWithBoundary() {
   );
 }
 
+function TemplatesPageWithBoundary() {
+  return (
+    <SectionErrorBoundary title="Помилка завантаження шаблонів">
+      <ShiftTemplatesPage />
+    </SectionErrorBoundary>
+  );
+}
+
 function AuthenticatedApp() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,6 +63,7 @@ function AuthenticatedApp() {
           <Route path="/" element={<Navigate to="/schedule" />} />
           <Route path="/schedule" element={<SchedulePageWithBoundary />} />
           <Route path="/employees" element={<EmployeesPageWithBoundary />} />
+          <Route path="/templates" element={<TemplatesPageWithBoundary />} />
         </Routes>
       </main>
     </div>

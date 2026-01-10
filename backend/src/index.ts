@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.routes';
 import employeeRoutes from './routes/employee.routes';
 import shiftRoutes from './routes/shift.routes';
 import departmentRoutes from './routes/department.routes';
+import templateRoutes from './routes/template.routes';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/api/templates', templateRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

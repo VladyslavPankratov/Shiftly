@@ -1,4 +1,4 @@
-import { Calendar, Users, Settings, LogOut } from 'lucide-react';
+import { Calendar, Users, Settings, LogOut, FileText } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/Button';
 
@@ -24,12 +24,19 @@ export function Navbar() {
                 <Calendar className="h-4 w-4 mr-2" />
                 Розклад
               </a>
-              <a
+<a
                 href="/employees"
                 className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
               >
                 <Users className="h-4 w-4 mr-2" />
                 Працівники
+              </a>
+              <a
+                href="/templates"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Шаблони
               </a>
             </div>
           </div>

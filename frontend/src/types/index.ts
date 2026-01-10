@@ -64,6 +64,7 @@ export interface ShiftTemplate {
   endTime: string;
   position: string;
   departmentId?: string;
+  department?: Department;
   requiredEmployees: number;
   organizationId: string;
 }
