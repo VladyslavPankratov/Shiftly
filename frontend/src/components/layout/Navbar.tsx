@@ -1,4 +1,4 @@
-import { Calendar, Users, Settings, LogOut, FileText } from 'lucide-react';
+import { Calendar, Users, Settings, LogOut, FileText, Building2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/Button';
 
@@ -37,6 +37,13 @@ export function Navbar() {
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Шаблони
+              </a>
+              <a
+                href="/departments"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Департаменти
               </a>
             </div>
           </div>
